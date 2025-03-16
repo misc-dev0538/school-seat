@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>자리 랜덤 배치</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 20px;
+    }
+
+    .container {
+      margin: 0 auto;
+      width: 50%;
+    }
+
+    .seats {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr); /* 5개의 열로 배치 */
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .seat {
+      width: 50px;
+      height: 50px;
+      background-color: lightblue;
+      border-radius: 5px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 18px;
+      transition: all 0.1s ease; /* 애니메이션 효과 */
+    }
+
+    .no-seat {
+      background-color: lightgray;
+      color: darkgray;
+      font-size: 14px;
+      font-style: italic;
+    }
+
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+      margin-top: 20px;
+    }
+
+    /* 긴박감을 위한 텍스트 효과 */
+    .countdown {
+      font-size: 24px;
+      color: red;
+      font-weight: bold;
+      margin-bottom: 20px;
+    }
+
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>자리 랜덤 배치</h1>
+    <div class="countdown" id="timer">남은 시간: 2초</div> <!-- 타이머 표시 -->
+
+    <div class="seats">
+      <div class="seat">01</div>
+      <div class="seat">06</div>
+      <div class="seat">12</div>
+      <div class="seat">17</div>
+      <div class="seat">22</div>
+
+      <div class="seat">02</div>
+      <div class="seat">07</div>
+      <div class="seat">13</div>
+      <div class="seat">18</div>
+      <div class="seat">23</div>
+
+      <div class="seat">03</div>
+      <div class="seat">09</div>
+      <div class="seat">14</div>
+      <div class="seat">19</div>
+      <div class="seat no-seat">없는 자리1</div>
+
+      <div class="seat">04</div>
+      <div class="seat">10</div>
+      <div class="seat">15</div>
+      <div class="seat">20</div>
+      <div class="seat no-seat">없는 자리2</div>
+
+      <div class="seat">05</div>
+      <div class="seat">11</div>
+      <div class="seat">16</div>
+      <div class="seat">21</div>
+      <div class="seat no-seat">없는 자리3</div>
+    </div>
+    <button id="randomize-btn">자리 랜덤 배치</button>
+  </div>
+
+  <!-- 버튼 클릭 소리 -->
+  <audio id="click-sound" src="https://www.soundjay.com/button/beep-07.wav"></audio>
+  <!-- 배치 완료 소리 -->
+  <audio id="complete-sound" src="https://www.soundjay.com/button/beep-08b.wav"></audio>
+
+  <script>
+    // 자리 번호 배열
+    const seatNumbers = [
+      "01", "02", "03", "04", "05", 
+      "06", "07", "09", "10", 
+      "11", "12", "13", "14", "15", 
+      "16", "17", "18", "19", "20", 
+      "21", "22", "23"
+    ];
+
+    // "없는 자리"는 제외한 번호 배열
+    const availableSeats = seatNumbers.filter(seat => !seat.includes("없는"));
+
+    let countdownTimer; // 타이머 변수
+    let timeLeft = 2;  // 타이머 시간 (초) - 2초로 설정
+
+    let interval;  // 랜덤 배치 중 일시 중지할 수 있도록 변수
+
+    // 자리 랜덤 배치 함수
+    function randomizeSeats() {
+      // 버튼 클릭 시 소리 재생
+      const clickSound = document.getElementById('click-sound');
+      clickSound.play();
+
+      // 타이머 시작
+      startTimer();
+
+      // 번호 배열 랜덤 섞기
+      const shuffledSeats = [...availableSeats];
+      shuffleArray(shuffledSeats);
+
+      // 모든 .seat 요소를 선택
+      const seatElements = document.querySelectorAll('.seat');
+
+      let availableIndex = 0;
+
+      // 랜덤 번호 배치와 애니메이션 효과
+      interval = setInterval(() => {
+        seatElements.forEach((seat) => {
+          // "없는 자리"는 변경하지 않음
+          if (!seat.classList.contains('no-seat') && availableIndex < shuffledSeats.length) {
+            seat.textContent = getRandomSeat(shuffledSeats);
+          }
+        });
+      }, 100); // 0.1초마다 자리 변경
+
+      // 일정 시간 후 랜덤 배치 멈추기
+      setTimeout(() => {
+        clearInterval(interval); // 배치 완료 후 인터벌 종료
+        completeRandomization(seatElements, shuffledSeats); // 마지막 자리 배치
+
+        // 배치 완료 소리 재생
+        const completeSound = document.getElementById('complete-sound');
+        completeSound.play();
+      }, timeLeft * 1000); // 시간 (초) 만큼 랜덤 배치 진행
+    }
+
+    // 랜덤 번호를 고르는 함수
+    function getRandomSeat(seatArray) {
+      const randomIndex = Math.floor(Math.random() * seatArray.length);
+      return seatArray[randomIndex];
+    }
+
+    // 배열 섞기 (Fisher-Yates 알고리즘)
+    function shuffleArray(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]]; // 두 값을 교환
+      }
+    }
+
+    // 배치 완료 후 마지막 번호 고르기
+    function completeRandomization(seatElements, shuffledSeats) {
+      let availableIndex = 0;
+      seatElements.forEach((seat) => {
+        if (!seat.classList.contains('no-seat') && availableIndex < shuffledSeats.length) {
+          seat.textContent = shuffledSeats[availableIndex];
+          availableIndex++;
+        }
+      });
+    }
+
+    // 타이머 시작
+    function startTimer() {
+      const timerElement = document.getElementById("timer");
+      countdownTimer = setInterval(() => {
+        if (timeLeft <= 0) {
+          clearInterval(countdownTimer);
+          timerElement.textContent = "배치 완료!";
+        } else {
+          timerElement.textContent = `남은 시간: ${timeLeft}초`;
+          timeLeft--;
+        }
+      }, 1000); // 1초마다 타이머 업데이트
+    }
+
+    // 버튼 클릭 시 자리 배치 시작
+    const randomizeButton = document.getElementById('randomize-btn');
+    randomizeButton.addEventListener('click', randomizeSeats);
+  </script>
+</body>
+</html>
